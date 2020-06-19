@@ -16,10 +16,11 @@ import wx
 
 class VariablePanel(wx.Panel):
 	"""
+	Panel used to display information on the different variables available.
+	This subpanel is meant to be displayed inside the overview panel.
 	"""
-	def __init__(self, parent, size : tuple, var_name : str, var_meta : dict):
-		super(VariablePanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size, style=wx.VSCROLL)
-		self.SetBackgroundColour('red')
+	def __init__(self, parent, var_name : str, var_meta : dict):
+		super(VariablePanel, self).__init__(parent=parent, id=wx.ID_ANY)
 		self.parent = parent
 		self.var_name = var_name
 		self.var_meta = var_meta

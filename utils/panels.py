@@ -12,6 +12,9 @@ if __name__ == '__main__':
 # GUI imports
 import wx
 
+# Other imports
+import netCDF4 as nc # Not used for its functions, only for typing
+
 # Custom imports
 from features import subpanels
 
@@ -30,7 +33,6 @@ class DefaultPanel(wx.Panel):
 	def __init__(self, parent, size : tuple):
 		super(DefaultPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
 		self.parent = parent
-		self.SetBackgroundColour('blue')
 		
 		# Create features
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -48,7 +50,6 @@ class DefaultPanel(wx.Panel):
 		self.sizer.Add(self.text, 0, wx.EXPAND|wx.CENTER, 0)
 		self.sizer.Add(self.button, 0, wx.ALL|wx.CENTER, 0)
 		self.SetSizer(self.sizer)
-		self.Fit()
 
 	def bind_button(self, event, handler):
 		"""
@@ -60,11 +61,9 @@ class OverviewPanel(wx.Panel):
 	"""
 	An overview panel to have a better lookup of the variables.
 	"""
-	def __init__(self, parent, size : tuple, dataset, metadata : dict):
+	def __init__(self, parent, size : tuple, dataset : nc.Dataset, metadata : dict):
 		super(OverviewPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
 		self.parent = parent
-		self.SetBackgroundColour('green')
-
 		self.dataset = dataset
 		self.metadata = metadata
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -103,7 +102,7 @@ class OverviewPanel(wx.Panel):
 		panels = {}
 		for var_name in self.metadata.keys():
 			var_meta = self.metadata[var_name]
-			panels[var_name] = subpanels.VariablePanel(parent=self, size=(500, 370), var_name=var_name, var_meta=var_meta)
+			panels[var_name] = subpanels.VariablePanel(parent=self, var_name=var_name, var_meta=var_meta)
 		return panels
 
 	def on_selected(self, event):

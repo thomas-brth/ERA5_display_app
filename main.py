@@ -31,9 +31,10 @@ from utils.panels import DefaultPanel, OverviewPanel, OptionPanel, PlotPanel
 ## Constants ##
 ###############
 
-GENERAL_SIZE = (800, 600)
-NOTEBOOK_SIZE = (800, 600)
-PANEL_SIZE = (800, 600)
+GENERAL_SIZE = (1080, 720)
+NOTEBOOK_SIZE = (1080, 720)
+PANEL_SIZE = (1080, 720)
+DEFAULT_POSITION = (200, 50)
 
 #############
 ## Classes ##
@@ -41,39 +42,48 @@ PANEL_SIZE = (800, 600)
 
 class DisplayApp(wx.App):
 	"""
+	Top-level app, initializing the frame to be displayed.
 	"""
-	def __init__(self, title : str, size : tuple = GENERAL_SIZE):
+	def __init__(self, title : str, size : tuple = GENERAL_SIZE, position : tuple = DEFAULT_POSITION):
 		super(DisplayApp, self).__init__()
+		# Default frame style flag, with resizing and maximizing window disabled
+		flags = wx.DEFAULT_FRAME_STYLE ^ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
 		self.frame = DisplayFrame(
 								  parent=None,
 								  id=wx.ID_ANY,
 								  title=title,
 								  size=size,
-								  style=wx.DEFAULT_FRAME_STYLE | wx.RESIZE_BORDER
+								  position=position,
+								  style=flags
 								  )
-		self.frame.SetMinSize(size=(500, 500))
-		self.frame.SetMaxSize(size=(1200, 800))
 		self.frame.Show(True)
 
 class DisplayFrame(wx.Frame):
 	"""
+	Main frame containing all the different panels inside a notebook.
+	By adding or removing pages from this notebook, it enables the app to be interactive with the user.
 	"""
-	def __init__(self, parent, id : int, title :str, size : tuple, style):
-		super(DisplayFrame, self).__init__(parent=parent, id=id, title=title, size=size, style=style)
+	def __init__(self, parent, id : int, title :str, size : tuple, position : tuple, style):
+		super(DisplayFrame, self).__init__(parent=parent, id=id, title=title, size=size, pos=position, style=style)
 		self.data_path = None
 		self.dataset = None
 		self.metadata = {}
+
+		# Panels to be used inside the frame
 		self.default_panel = None
 		self.overview_panel = None
 		self.option_panel = None
 		self.plot_panel = None
 
-		# Main container and notebook
+		# Main container and notebook added on it
 		self.main_panel = wx.Panel(parent=self, id=wx.ID_ANY, size=NOTEBOOK_SIZE)
 		self.notebook = wx.Notebook(parent=self.main_panel, style=wx.NB_BOTTOM)
 
 		# Menu panel
-		self.default_panel = DefaultPanel(parent=self.notebook, size=PANEL_SIZE)
+		self.default_panel = DefaultPanel(
+										  parent=self.notebook,
+										  size=PANEL_SIZE
+										  )
 		self.default_panel.bind_button(event=wx.EVT_BUTTON, handler=self.open_file_browser)
 		
 		# Add panels to each tab
@@ -82,17 +92,6 @@ class DisplayFrame(wx.Frame):
 		main_sizer = wx.BoxSizer(wx.VERTICAL)
 		main_sizer.Add(self.notebook, 0, wx.EXPAND, 0)
 		self.main_panel.SetSizer(main_sizer)
-		self.Bind(wx.EVT_SIZE, handler=self.OnSize)
-
-	def OnSize(self, event):
-		"""
-		Resize all the panels when the frame is resized.
-		"""
-		size = self.GetClientSize()
-		size[0] = max(size[0], 400)
-		size[1] = max(size[1], 400)
-		self.main_panel.SetSize(size)
-		self.notebook.SetSize(size)
 
 	def open_file_browser(self, event):
 		"""
@@ -156,7 +155,7 @@ class DisplayFrame(wx.Frame):
 ###############
 
 def main():
-	app = DisplayApp(title="ERA 5 display app", size=(500, 500))
+	app = DisplayApp(title="ERA 5 display app")
 	app.MainLoop()
 
 if __name__ == '__main__':
