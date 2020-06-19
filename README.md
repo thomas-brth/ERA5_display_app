@@ -36,7 +36,7 @@ Well, you mainly have two possibilities: get them manually from the CDS or use t
 
 First, you need to sign up and create an account (I guess you don't have an account yet if you're reading this). Once you're logged in, look at the top left corner of your window, and go to the datasets section.
 
-![Datasets section](https://github.com/thomas-brth/ERA5_display_app/ressources/images/cds_1.PNG "First look at CDS")
+![Datasets section](/ressources/images/cds_1.PNG "First look at CDS")
 
 This will open a browser. A bunch of datasets are available, as you can see. But don't worry, we won't dive into the depths of the CDS.  
 Type *ERA5* in the search bar to shorten datasets list. We'll focus on (only) 6 datasets:
@@ -50,13 +50,13 @@ Type *ERA5* in the search bar to shorten datasets list. We'll focus on (only) 6 
 
 Choose a dataset. You should get something like this:
 
-![Opening a dataset](https://github.com/thomas-brth/ERA5_display_app/ressources/images/cds_2.PNG "Opening a dataset")
+![Opening a dataset](/ressources/images/cds_2.PNG "Opening a dataset")
 
 In the *Overview* tab, you'll get basic information on the dataset itself, its variables etc... In the *Download Data* tab, you'll be able to choose the variables you want to look at, the time period, the AOI and so on.
 
 **Don't forget at the end to check the data format!**
 
-![Data format](https://github.com/thomas-brth/ERA5_display_app/ressources/images/cds_3.PNG )
+![Data format](/ressources/images/cds_3.PNG )
 
 ### Retrieve data with Python
 
