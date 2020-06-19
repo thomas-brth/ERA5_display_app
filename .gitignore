@@ -1,5 +1,5 @@
 # Ignore chached python files created at import
 __pycache__/
 
-# Ignore data files (too big to be download or upload manually)
+# Ignore data files (too big to be downloaded or uploaded manually)
 data/
