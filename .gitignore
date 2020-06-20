@@ -1,5 +1,9 @@
 # Ignore chached python files created at import
 __pycache__/
+*.pyc
 
 # Ignore data files (too big to be downloaded or uploaded manually)
 data/
+
+# Stuff folder will just contains trash code, ideas and things which don't need to be controled.
+stuff/
