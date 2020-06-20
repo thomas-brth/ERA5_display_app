@@ -61,11 +61,16 @@ def retrieve_meta(full_path : str):
 	ds = open_dataset(full_path)
 	return get_meta(ds)
 
-def is_pressure_level(ds : nc.Dataset):
+def is_pressure_level(ds : nc.Dataset = None, meta : dict = None):
 	"""
 	Return True if given dataset has pressure levels.
 	"""
-	return 'level' in ds.dimensions
+	if ds:
+		return 'level' in ds.dimensions
+	elif meta:
+		return 'level' in meta.keys()
+	else:
+		raise Exception("ArgumentsError: You need at least to pass 1 argument.")
 
 def main():
 	pass

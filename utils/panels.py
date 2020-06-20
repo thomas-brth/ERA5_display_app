@@ -68,15 +68,32 @@ class OverviewPanel(wx.Panel):
 		self.metadata = metadata
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
 		
+		# Create a StaticBox for layout management
+		stbox = wx.StaticBox(parent=self, label="Variables")
+		font = stbox.GetFont()
+		font.PointSize += 5
+		stbox.SetFont(font.Bold())
+		stbox_sizer = wx.StaticBoxSizer(stbox, wx.HORIZONTAL)
+		
+		title = wx.StaticText(parent=stbox, label="Choose a variable : ")
+
 		# Combo Box: choosing variables to look at
 		l_variables = list(self.metadata.keys())
 		self.c_box = wx.ComboBox(
-							parent=self,
+							parent=stbox,
 							id=wx.ID_ANY,
 							size=(300, 30),
 							choices=l_variables,
 							style=wx.CB_DROPDOWN | wx.CB_READONLY
 							)
+		font = font.GetBaseFont()
+		font.PointSize -= 5
+
+		title.SetFont(font.Bold())
+		self.c_box.SetFont(font)
+
+		stbox_sizer.Add(title, 0, wx.CENTER | wx.ALL, 20)
+		stbox_sizer.Add(self.c_box, 0, wx.CENTER | wx.ALL, 20)
 
 		# Dictionary of variable subpanels to hide and show when selecting variables
 		self.var_panels = self.generate_subpanels() 
@@ -85,9 +102,7 @@ class OverviewPanel(wx.Panel):
 		self.c_box.Bind(wx.EVT_COMBOBOX, handler=self.on_selected)
 
 		# Sizer layout management
-		self.sizer.AddSpacer(50)
-		self.sizer.Add(self.c_box, 0, wx.ALIGN_CENTER, 0)
-		self.sizer.AddSpacer(50)
+		self.sizer.Add(stbox_sizer, 0, wx.EXPAND | wx.ALL , 20)
 		for var_name in self.var_panels.keys():
 			panel = self.var_panels[var_name]
 			panel.Hide()
@@ -120,9 +135,26 @@ class OverviewPanel(wx.Panel):
 
 class OptionPanel(wx.Panel):
 	"""
+	A panel with all the available options to customize the plot.
+	Some are mandatory, others are just optional.
 	"""
-	def __init__(self, parent, size : tuple):
+	def __init__(self, parent, size : tuple, dataset : nc.Dataset, metadata : dict):
 		super(OptionPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
+		self.parent = parent
+		self.dataset = dataset
+		self.metadata = metadata
+		self.options = {} # It will gather all the options set by the user
+
+		self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+		self.SetSizer(self.main_sizer)
+
+	def on_option_change(self, event):
+		"""
+		Event handler catching all the option changes.
+		"""
+		pass
+
 
 class PlotPanel(wx.Panel):
 	"""

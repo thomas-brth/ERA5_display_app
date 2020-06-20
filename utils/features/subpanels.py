@@ -24,36 +24,50 @@ class VariablePanel(wx.Panel):
 		self.parent = parent
 		self.var_name = var_name
 		self.var_meta = var_meta
-		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		self.main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-		# Title font initialization
-		title_font = wx.Font()
+		# First StaticBox with general information
+		stbox_gen = wx.StaticBox(parent=self, label=f"Description of the variable {var_name}", size=(600, 200))
+		font = stbox_gen.GetFont()
+		font.PointSize += 5
+		stbox_gen.SetFont(font.Bold())
+		stbox_gen_sizer = wx.StaticBoxSizer(stbox_gen, wx.VERTICAL)
 		
-		# Create the different text widgets
-		self.sizer.AddSpacer(15)
-		title = wx.StaticText(self, label=f"Description of the variable {var_name}", style=wx.ALIGN_CENTER)
-		title.SetFont(title_font.Bold())
-		self.sizer.Add(title, 0, wx.EXPAND, 20)
-		self.sizer.AddSpacer(15)
+		dimensions = wx.StaticText(stbox_gen, label=f"Dimensions : {var_meta['dimensions']}")
+		shape = wx.StaticText(stbox_gen, label=f"Shape : {var_meta['shape']}")
 		
-		dimensions = wx.StaticText(self, label=f"Dimensions : {var_meta['dimensions']}")
-		self.sizer.Add(dimensions, 0, wx.LEFT, 20)
-		
-		shape = wx.StaticText(self, label=f"Shape : {var_meta['shape']}")
-		self.sizer.Add(shape, 0, wx.LEFT, 20)
+		font = font.GetBaseFont()
+		font.PointSize -= 5
+		font.MakeItalic()
+		dimensions.SetFont(font)
+		shape.SetFont(font)
 
-		self.sizer.AddSpacer(15)
-		attributes_title = wx.StaticText(self, label="Attributes", style=wx.ALIGN_CENTER)
-		attributes_title.SetFont(title_font.Bold())
-		self.sizer.Add(attributes_title, 0, wx.EXPAND, 20)
-		self.sizer.AddSpacer(15)
+		stbox_gen_sizer.Add(dimensions, 0, wx.LEFT, 20)
+		stbox_gen_sizer.Add(shape, 0, wx.LEFT, 20)
+
+		# Second StaticBox with attributes information
+		stbox_attr = wx.StaticBox(parent=self, label="Attributes", size=(600, 350))
+		font = stbox_attr.GetFont()
+		font.PointSize += 5
+		stbox_attr.SetFont(font.Bold())
+		stbox_attr_sizer = wx.StaticBoxSizer(stbox_attr, wx.VERTICAL)
+
+		font = font.GetBaseFont()
+		font.PointSize -= 5
+		font.MakeItalic()
 
 		attr_dict = var_meta['attributes']
 		for attr in attr_dict.keys():
-			attr_text = wx.StaticText(self, label=f"{attr} : {attr_dict[attr]}")
-			self.sizer.Add(attr_text, 0, wx.LEFT, 20)
+			attr_text = wx.StaticText(stbox_attr, label=f"{attr} : {attr_dict[attr]}")
+			attr_text.SetFont(font)
+			stbox_attr_sizer.Add(attr_text, 0, wx.LEFT, 20)
 
-		self.SetSizer(self.sizer)
+
+
+		self.main_sizer.Add(stbox_gen_sizer, 0, wx.LEFT, 20)
+		self.main_sizer.Add(stbox_attr_sizer, 0, wx.LEFT, 20)
+
+		self.SetSizer(self.main_sizer)
 
 ###############
 ## Functions ##

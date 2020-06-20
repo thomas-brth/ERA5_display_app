@@ -116,6 +116,11 @@ class DisplayFrame(wx.Frame):
 		"""
 		Open dataset and get metadata.
 		"""
+		if self.dataset:
+			# If a dataset has already been loaded, delete pages associated with this dataset.
+			# TO ADD: Open a dialog window to make sure it's not a mistake
+			# Something like: "Do you want to continue? Map options and plot will be reset."
+			wx_tools.delete_all_excluding(notebook=self.notebook, exclusion_list=["Menu"])
 		try:
 			self.dataset = nc_tools.open_dataset(self.data_path)
 			self.metadata = nc_tools.get_meta(self.dataset)
@@ -146,7 +151,9 @@ class DisplayFrame(wx.Frame):
 		"""
 		self.option_panel = OptionPanel(
 										parent=self.notebook,
-										size=PANEL_SIZE
+										size=PANEL_SIZE,
+										dataset=self.dataset,
+										metadata=self.metadata
 										)
 		self.notebook.AddPage(self.option_panel, "Map Options")
 		
