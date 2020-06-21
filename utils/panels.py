@@ -11,12 +11,15 @@ if __name__ == '__main__':
 
 # GUI imports
 import wx
+from wx.lib.intctrl import IntCtrl
+from wx.lib.masked.numctrl import NumCtrl
 
 # Other imports
 import netCDF4 as nc # Not used for its functions, only for typing
 
 # Custom imports
 from features import subpanels
+import nc_tools
 
 ###############
 ## Constants ##
@@ -144,16 +147,150 @@ class OptionPanel(wx.Panel):
 		self.dataset = dataset
 		self.metadata = metadata
 		self.options = {} # It will gather all the options set by the user
+		self.init_options() # Initialize the options dictionary
+		self.var_ids = {} # Dictionary with id keys and their corresponing variable
 
 		self.main_sizer = wx.BoxSizer(wx.VERTICAL)
 
+		# --------------------------------------- #
+		# First StaticBox, general options:
+		# Variable / Time index / Level (if necessary)
+		stbox_gen = wx.StaticBox(parent=self, label="General")
+		stbox_gen_sizer = wx.StaticBoxSizer(stbox_gen, wx.HORIZONTAL)
+		
+		# Variables
+		text_variables = wx.StaticText(parent=stbox_gen, label="Variable : ")
+		l_variables = nc_tools.get_variables(self.dataset)
+		self.c_box_variables = wx.ComboBox(
+									  parent=stbox_gen,
+									  id=wx.ID_ANY,
+									  choices=l_variables,
+									  style=wx.CB_DROPDOWN | wx.CB_READONLY
+									  )
+		self.var_ids[self.c_box_variables.GetId()] = "variable"
+
+		# Time
+		text_time = wx.StaticText(parent=stbox_gen, label="Time index : ")
+		timesteps =  nc_tools.get_timesteps(self.dataset)
+		self.c_box_time = wx.ComboBox(
+									  parent=stbox_gen,
+									  id=wx.ID_ANY,
+									  choices=timesteps,
+									  style=wx.CB_DROPDOWN | wx.CB_READONLY
+									  )
+		self.var_ids[self.c_box_time.GetId()] = "time_index"
+
+		# Pressure Level (if necessary) 
+		if nc_tools.is_pressure_level(meta=self.metadata):
+			text_levels = wx.StaticText(parent=stbox_gen, label="Pressure level : ")
+			levels = nc_tools.get_pressure_levels(self.dataset)
+			self.c_box_levels = wx.ComboBox(
+									  		parent=stbox_gen,
+									  		id=wx.ID_ANY,
+									 	 	choices=levels,
+									  		style=wx.CB_DROPDOWN | wx.CB_READONLY
+									  		)
+			self.var_ids[self.c_box_levels.GetId()] = "pl_index"
+		else:
+			self.c_box_levels = None
+
+		# StaticBox sizer setup
+		stbox_gen_sizer.Add(text_variables, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		stbox_gen_sizer.Add(self.c_box_variables, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+		stbox_gen_sizer.Add(text_time, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		stbox_gen_sizer.Add(self.c_box_time, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+		if self.c_box_levels:
+			# Add levels to the sizer if dataset contains levels
+			stbox_gen_sizer.Add(text_levels, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+			stbox_gen_sizer.Add(self.c_box_levels, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+
+		# --------------------------------------- #
+		# Second StaticBox, data corrections
+		stbox_data_corr = wx.StaticBox(parent=self, label="Corrections")
+		stbox_data_corr_sizer = wx.StaticBoxSizer(stbox_data_corr, wx.HORIZONTAL)
+
+		# Longitude offset
+		text_lon_offset = wx.StaticText(parent=stbox_data_corr, label="Longitude offset : ")
+		self.te_lon_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, style=wx.TE_PROCESS_ENTER, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_lon_offset.GetId()] = "lon_offset"
+
+		# Data multiplicator
+		text_coef = wx.StaticText(parent=stbox_data_corr, label="Apply coefficient : ")
+		self.te_coef = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=1, style=wx.TE_PROCESS_ENTER, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_coef.GetId()] = "coef"
+
+		# Data offset
+		text_data_offset = wx.StaticText(parent=stbox_data_corr, label="Data offset : ")
+		self.te_data_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, style=wx.TE_PROCESS_ENTER, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_data_offset.GetId()] = "offset"
+
+		# StaticBox sizer setup
+		stbox_data_corr_sizer.Add(text_lon_offset, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		stbox_data_corr_sizer.Add(self.te_lon_offset, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+		stbox_data_corr_sizer.Add(text_coef, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		stbox_data_corr_sizer.Add(self.te_coef, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+		stbox_data_corr_sizer.Add(text_data_offset, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		stbox_data_corr_sizer.Add(self.te_data_offset, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+
+		# --------------------------------------- #
+		# Third StaticBox, projection setup
+
+		# --------------------------------------- #
+		# Fourth StaticBox, plot options
+
+		# --------------------------------------- #
+		# Bindings
+		self.Bind(wx.EVT_COMBOBOX, handler=self.on_option_change)
+		self.Bind(wx.EVT_TEXT, handler=self.on_option_change)
+
+		# --------------------------------------- #
+		# Add element to the main sizer
+		self.main_sizer.Add(stbox_gen_sizer, 0, wx.EXPAND | wx.ALL, 20)
+		self.main_sizer.Add(stbox_data_corr_sizer, 0, wx.EXPAND | wx.ALL, 20)
 		self.SetSizer(self.main_sizer)
 
 	def on_option_change(self, event):
 		"""
 		Event handler catching all the option changes.
 		"""
-		pass
+		element = event.GetEventObject()
+		print(self.options, flush=True)
+		var = self.var_ids[element.GetId()]
+		if var == 'time_index' or var == 'pl_index':
+			self.options[var] = element.GetValue().split(" ")[0]
+		else:
+			self.options[var] = element.GetValue()
+		print(self.options, flush=True)
+		event.Skip()
+
+	def init_options(self):
+		"""
+		Initialize the map options.
+		"""
+		self.options = {
+			"variable": nc_tools.get_variables(self.dataset)[0],
+			"time_index": 0,
+			"pl_index": 0,
+			"lon_offset": 0,
+			"coef": 1,
+			"offset": 0,
+			"lon_0": 0,
+			"lat_0": 0,
+			"llcrnrlat": None,
+			"llcrnrlon": None,
+			"urcrnrlat": None,
+			"urcrnrlon": None,
+			"resolution": None,
+			"projection": "merc",
+			"countries": False,
+			"rivers": False,
+			"cmap": "seismic",
+			"colorbar": False,
+			"c_min": 0,
+			"c_max": 50,
+			"midpoint": 25,
+			"plot_type": "mesh"
+		}
 
 
 class PlotPanel(wx.Panel):

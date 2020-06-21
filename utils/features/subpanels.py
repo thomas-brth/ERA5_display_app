@@ -62,8 +62,6 @@ class VariablePanel(wx.Panel):
 			attr_text.SetFont(font)
 			stbox_attr_sizer.Add(attr_text, 0, wx.LEFT, 20)
 
-
-
 		self.main_sizer.Add(stbox_gen_sizer, 0, wx.LEFT, 20)
 		self.main_sizer.Add(stbox_attr_sizer, 0, wx.LEFT, 20)
 
