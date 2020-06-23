@@ -6,6 +6,7 @@ http://matplotlib.1069221.n5.nabble.com/Embedding-Basemap-in-a-wx-app-td17935.ht
 https://pythonspot.com/wxpython-tabs/
 https://www.blog.pythonlibrary.org/2010/06/16/wxpython-how-to-switch-between-panels/
 https://www.programcreek.com/python/example/4873/wx.MessageBox
+Plot colormaps: https://stackoverflow.com/questions/34314356/how-to-view-all-colormaps-available-in-matplotlib
 """
 
 #############
@@ -14,8 +15,10 @@ https://www.programcreek.com/python/example/4873/wx.MessageBox
 
 # Paths fixing
 import sys
-sys.path.append("utils")
-sys.path.append("utils\\features")
+if __name__ == '__main__':
+	sys.path.append("utils")
+	sys.path.append("utils\\features")
+	sys.path.append("utils\\figure")
 
 # General imports
 import os
@@ -156,6 +159,22 @@ class DisplayFrame(wx.Frame):
 										metadata=self.metadata
 										)
 		self.notebook.AddPage(self.option_panel, "Map Options")
+		self.option_panel.bind_draw_button(handler=self.show_plot)
+
+	def show_plot(self, event):
+		"""
+		Show the plot panel.
+		"""
+		wx_tools.delete_all_excluding(notebook=self.notebook, exclusion_list=["Menu", "Data Overview", "Map Options"])
+		self.plot_panel = PlotPanel(
+									parent=self.notebook,
+									size=PANEL_SIZE,
+									dataset=self.dataset,
+									map_options=self.option_panel.options
+									)
+		self.plot_panel.draw()
+		self.notebook.AddPage(self.plot_panel, "Plot")
+		event.Skip()
 		
 ###############
 ## Functions ##

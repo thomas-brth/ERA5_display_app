@@ -8,17 +8,24 @@
 import sys
 if __name__ == '__main__':
 	sys.path.append("features")
+	sys.path.append("figure")
 
 # GUI imports
 import wx
 from wx.lib.intctrl import IntCtrl
 from wx.lib.masked.numctrl import NumCtrl
 
+# matplotlib import
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+from matplotlib.figure import Figure as Fig
+
 # Other imports
 import netCDF4 as nc # Not used for its functions, only for typing
 
 # Custom imports
 from features import subpanels
+from figure import display_tools
+from figure import *
 import nc_tools
 
 ###############
@@ -128,7 +135,6 @@ class OverviewPanel(wx.Panel):
 		ComboBox event handler
 		"""
 		var_name = self.c_box.GetValue()
-		print(var_name, flush=True)
 		if self.current_panel_name:
 			self.var_panels[self.current_panel_name].Hide()
 		self.current_panel_name = var_name
@@ -149,6 +155,9 @@ class OptionPanel(wx.Panel):
 		self.options = {} # It will gather all the options set by the user
 		self.init_options() # Initialize the options dictionary
 		self.var_ids = {} # Dictionary with id keys and their corresponing variable
+		self.c_boxes = [] # List of ComboBox used
+		self.text_entries = [] # List of text entries used
+		self.chk_boxes = [] # List of check boxes used
 
 		self.main_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -168,6 +177,7 @@ class OptionPanel(wx.Panel):
 									  style=wx.CB_DROPDOWN | wx.CB_READONLY
 									  )
 		self.var_ids[self.c_box_variables.GetId()] = "variable"
+		self.c_boxes.append(self.c_box_variables)
 
 		# Time
 		text_time = wx.StaticText(parent=stbox_gen, label="Time index : ")
@@ -179,6 +189,7 @@ class OptionPanel(wx.Panel):
 									  style=wx.CB_DROPDOWN | wx.CB_READONLY
 									  )
 		self.var_ids[self.c_box_time.GetId()] = "time_index"
+		self.c_boxes.append(self.c_box_time)
 
 		# Pressure Level (if necessary) 
 		if nc_tools.is_pressure_level(meta=self.metadata):
@@ -191,6 +202,7 @@ class OptionPanel(wx.Panel):
 									  		style=wx.CB_DROPDOWN | wx.CB_READONLY
 									  		)
 			self.var_ids[self.c_box_levels.GetId()] = "pl_index"
+			self.c_boxes.append(self.c_box_levels)
 		else:
 			self.c_box_levels = None
 
@@ -211,18 +223,21 @@ class OptionPanel(wx.Panel):
 
 		# Longitude offset
 		text_lon_offset = wx.StaticText(parent=stbox_data_corr, label="Longitude offset : ")
-		self.te_lon_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, style=wx.TE_PROCESS_ENTER, integerWidth=3, fractionWidth=2)
+		self.te_lon_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
 		self.var_ids[self.te_lon_offset.GetId()] = "lon_offset"
+		self.text_entries.append(self.te_lon_offset)
 
 		# Data multiplicator
 		text_coef = wx.StaticText(parent=stbox_data_corr, label="Apply coefficient : ")
-		self.te_coef = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=1, style=wx.TE_PROCESS_ENTER, integerWidth=3, fractionWidth=2)
+		self.te_coef = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=1, integerWidth=3, fractionWidth=2)
 		self.var_ids[self.te_coef.GetId()] = "coef"
+		self.text_entries.append(self.te_coef)
 
 		# Data offset
 		text_data_offset = wx.StaticText(parent=stbox_data_corr, label="Data offset : ")
-		self.te_data_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, style=wx.TE_PROCESS_ENTER, integerWidth=3, fractionWidth=2)
+		self.te_data_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
 		self.var_ids[self.te_data_offset.GetId()] = "offset"
+		self.text_entries.append(self.te_data_offset)
 
 		# StaticBox sizer setup
 		stbox_data_corr_sizer.Add(text_lon_offset, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
@@ -234,19 +249,193 @@ class OptionPanel(wx.Panel):
 
 		# --------------------------------------- #
 		# Third StaticBox, projection setup
+		stbox_proj = wx.StaticBox(parent=self, label="Map setup")
+		stbox_proj_sizer = wx.StaticBoxSizer(stbox_proj, wx.HORIZONTAL)
+
+		# Panel projection #
+		pnl_proj = wx.Panel(parent=stbox_proj)
+		pnl_proj_sizer = wx.GridSizer(cols=2, gap=(5, 5))
+		
+		text_proj = wx.StaticText(parent=pnl_proj, label="Projection : ")
+		proj_list = display_tools.get_list_projections()
+		self.c_box_proj = wx.ComboBox(
+									  parent=pnl_proj,
+									  id=wx.ID_ANY,
+									  choices=proj_list,
+									  style=wx.CB_DROPDOWN | wx.CB_READONLY
+									  )
+		self.var_ids[self.c_box_proj.GetId()] = "projection"
+		self.c_boxes.append(self.c_box_proj)
+
+		text_lon_0 = wx.StaticText(parent=pnl_proj, label="lon_0 : ")
+		self.te_lon_0 = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_lon_0.GetId()] = "lon_0"
+		self.text_entries.append(self.te_lon_0)
+
+		text_lat_0 = wx.StaticText(parent=pnl_proj, label="lat_0 : ")
+		self.te_lat_0 = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_lat_0.GetId()] = "lat_0"
+		self.text_entries.append(self.te_lat_0)
+
+		text_llcrnrlon = wx.StaticText(parent=pnl_proj, label="llcrnrlon : ")
+		self.te_llcrnrlon = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=-180, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_llcrnrlon.GetId()] = "llcrnrlon"
+		self.text_entries.append(self.te_llcrnrlon)
+		self.te_llcrnrlon.Enable(False)
+
+		text_llcrnrlat = wx.StaticText(parent=pnl_proj, label="llcrnrlat : ")
+		self.te_llcrnrlat = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=-90, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_llcrnrlat.GetId()] = "llcrnrlat"
+		self.text_entries.append(self.te_llcrnrlat)
+		self.te_llcrnrlat.Enable(False)
+
+		text_urcrnrlon = wx.StaticText(parent=pnl_proj, label="urcrnrlon : ")
+		self.te_urcrnrlon = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=180, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_urcrnrlon.GetId()] = "urcrnrlon"
+		self.text_entries.append(self.te_urcrnrlon)
+		self.te_urcrnrlon.Enable(False)
+
+		text_urcrnrlat = wx.StaticText(parent=pnl_proj, label="urcrnrlat : ")
+		self.te_urcrnrlat = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=90, integerWidth=3, fractionWidth=2)
+		self.var_ids[self.te_urcrnrlat.GetId()] = "urcrnrlat"
+		self.text_entries.append(self.te_urcrnrlat)
+		self.te_urcrnrlat.Enable(False)
+
+		# Sizer setup
+		pnl_proj_sizer.Add(text_proj, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.c_box_proj, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_lon_0, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.te_lon_0, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_lat_0, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.te_lat_0, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_llcrnrlon, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.te_llcrnrlon, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_llcrnrlat, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.te_llcrnrlat, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_urcrnrlon, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.te_urcrnrlon, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_urcrnrlat, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(self.te_urcrnrlat, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj.SetSizer(pnl_proj_sizer)
+
+		# Panel other options #
+		pnl_other = wx.Panel(parent=stbox_proj)
+		pnl_other_sizer = wx.GridSizer(cols=2, gap=(5, 5))
+
+		text_res = wx.StaticText(parent=pnl_other, label="Resolution : ")
+		l_resolutions = ['c', 'l', 'i', 'h', 'f']
+		self.c_box_res = wx.ComboBox(
+									 parent=pnl_other,
+									 id=wx.ID_ANY,
+									 choices=l_resolutions,
+									 style=wx.CB_DROPDOWN | wx.CB_READONLY,
+									 size=(100, 25)
+									 )
+		self.var_ids[self.c_box_res.GetId()] = "resolution"
+		self.c_boxes.append(self.c_box_res)
+
+		self.check_countries = wx.CheckBox(parent=pnl_other, id=wx.ID_ANY, label=" Draw countries")
+		self.var_ids[self.check_countries.GetId()] = "countries"
+		self.chk_boxes.append(self.check_countries)
+
+		self.check_rivers = wx.CheckBox(parent=pnl_other, id=wx.ID_ANY, label=" Draw rivers")
+		self.var_ids[self.check_rivers.GetId()] = "rivers"
+		self.chk_boxes.append(self.check_rivers)
+
+		text_cmap = wx.StaticText(parent=pnl_other, label="Colormap : ")
+		colormaps = display_tools.get_cmap()
+		self.c_box_cmap = wx.ComboBox(
+									  parent=pnl_other,
+									  id=wx.ID_ANY,
+									  choices=colormaps,
+									  style=wx.CB_DROPDOWN | wx.CB_READONLY,
+									  size=(100, 25)
+									  )
+		self.var_ids[self.c_box_cmap.GetId()] = "cmap"
+		self.c_boxes.append(self.c_box_cmap)
+
+		text_pltype = wx.StaticText(parent=pnl_other, label="Plot type : ")
+		plot_types = ["contour", "countourf", "pcolormesh", "streamplot"]
+		self.c_box_pltype = wx.ComboBox(
+									  parent=pnl_other,
+									  id=wx.ID_ANY,
+									  choices=plot_types,
+									  style=wx.CB_DROPDOWN | wx.CB_READONLY,
+									  size=(100, 25)
+									  )
+		self.var_ids[self.c_box_pltype.GetId()] = "plot_type"
+		self.c_boxes.append(self.c_box_pltype)
+
+		self.check_colorbar = wx.CheckBox(parent=pnl_other, id=wx.ID_ANY, label=" Colorbar")
+		self.var_ids[self.check_colorbar.GetId()] = "colorbar"
+		self.chk_boxes.append(self.check_colorbar)
+
+		self.check_norm = wx.CheckBox(parent=pnl_other, id=wx.ID_ANY, label=" Norm")
+		self.var_ids[self.check_norm.GetId()] = "norm"
+		# This check box is not added to the list of check boxes because it'll have its own binding.
+
+		text_midpoint = wx.StaticText(parent=pnl_other, label="Midpoint : ")
+		self.te_midpoint = IntCtrl(parent=pnl_other, id=wx.ID_ANY, value=25)
+		self.var_ids[self.te_midpoint.GetId()] = "midpoint"
+		self.text_entries.append(self.te_midpoint)
+		self.te_midpoint.Enable(False)
+
+		text_min = wx.StaticText(parent=pnl_other, label="Min : ")
+		self.te_min = IntCtrl(parent=pnl_other, id=wx.ID_ANY, value=0)
+		self.var_ids[self.te_min.GetId()] = "c_min"
+		self.text_entries.append(self.te_min)
+		self.te_min.Enable(False)
+
+		text_max = wx.StaticText(parent=pnl_other, label="Max : ")
+		self.te_max = IntCtrl(parent=pnl_other, id=wx.ID_ANY, value=50)
+		self.var_ids[self.te_max.GetId()] = "c_max"
+		self.text_entries.append(self.te_max)
+		self.te_max.Enable(False)
+
+		# Sizer setup
+		pnl_other_sizer.Add(text_res, 0)
+		pnl_other_sizer.Add(self.c_box_res, 0)
+		pnl_other_sizer.Add(self.check_countries, 0)
+		pnl_other_sizer.Add(self.check_rivers, 0)
+		pnl_other_sizer.Add(text_cmap, 0)
+		pnl_other_sizer.Add(self.c_box_cmap, 0)
+		pnl_other_sizer.Add(text_pltype, 0)
+		pnl_other_sizer.Add(self.c_box_pltype, 0)
+		pnl_other_sizer.Add(self.check_colorbar, 0)
+		pnl_other_sizer.Add(self.check_norm, 0)
+		pnl_other_sizer.Add(text_midpoint, 0)
+		pnl_other_sizer.Add(self.te_midpoint, 0)
+		pnl_other_sizer.Add(text_min, 0)
+		pnl_other_sizer.Add(self.te_min, 0)
+		pnl_other_sizer.Add(text_max, 0)
+		pnl_other_sizer.Add(self.te_max, 0)
+		pnl_other.SetSizer(pnl_other_sizer)
+
+		# StaticBox Sizer setup
+		stbox_proj_sizer.Add(pnl_proj, 0, wx.ALL, 20)
+		stbox_proj_sizer.Add(pnl_other, 0, wx.ALL, 20)
 
 		# --------------------------------------- #
-		# Fourth StaticBox, plot options
+		# PLot Button
+
+		self.button = wx.Button(parent=self, label="Draw", size=(200, 30))
 
 		# --------------------------------------- #
 		# Bindings
-		self.Bind(wx.EVT_COMBOBOX, handler=self.on_option_change)
-		self.Bind(wx.EVT_TEXT, handler=self.on_option_change)
+		for c_box in self.c_boxes:
+			c_box.Bind(wx.EVT_COMBOBOX, handler=self.on_option_change)
+		for te in self.text_entries:
+			te.Bind(wx.EVT_TEXT, handler=self.on_option_change)
+		for chk in self.chk_boxes:
+			chk.Bind(wx.EVT_CHECKBOX, handler=self.on_option_change)
+		self.check_norm.Bind(wx.EVT_CHECKBOX, handler=self.on_norm_change)
 
 		# --------------------------------------- #
 		# Add element to the main sizer
-		self.main_sizer.Add(stbox_gen_sizer, 0, wx.EXPAND | wx.ALL, 20)
-		self.main_sizer.Add(stbox_data_corr_sizer, 0, wx.EXPAND | wx.ALL, 20)
+		self.main_sizer.Add(stbox_gen_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 20)
+		self.main_sizer.Add(stbox_data_corr_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 20)
+		self.main_sizer.Add(stbox_proj_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 20)
+		self.main_sizer.Add(self.button, 0, wx.ALIGN_CENTER | wx.ALL, 20)
 		self.SetSizer(self.main_sizer)
 
 	def on_option_change(self, event):
@@ -254,13 +443,41 @@ class OptionPanel(wx.Panel):
 		Event handler catching all the option changes.
 		"""
 		element = event.GetEventObject()
-		print(self.options, flush=True)
-		var = self.var_ids[element.GetId()]
-		if var == 'time_index' or var == 'pl_index':
-			self.options[var] = element.GetValue().split(" ")[0]
+		_id = element.GetId()
+		var_name = self.var_ids[_id]
+		if var_name == 'time_index' or var_name == 'pl_index':
+			val = int(element.GetValue().split(" ")[0])
+		elif var_name == 'projection':
+			val = element.GetValue().split(" ")[0]
+			proj_without_boundaries = ['sinu', 'moll', 'hammer', 'npstere', 'spstere', 'nplaea', 'splaea', 'npaeqd', 'spaeqd', 'robin', 'eck4', 'kav7', 'mbtfpq']
+			if val in proj_without_boundaries:
+				self.te_llcrnrlon.Enable(False)
+				self.te_llcrnrlat.Enable(False)
+				self.te_urcrnrlon.Enable(False)
+				self.te_urcrnrlat.Enable(False)
+				self.options['boundaries'] = False
+			else:
+				self.te_llcrnrlon.Enable(True)
+				self.te_llcrnrlat.Enable(True)
+				self.te_urcrnrlon.Enable(True)
+				self.te_urcrnrlat.Enable(True)
+				self.options['boundaries'] = True
 		else:
-			self.options[var] = element.GetValue()
+			val = element.GetValue()
+		self.update_option(var_name, val)
 		print(self.options, flush=True)
+		event.Skip()
+
+	def on_norm_change(self, event):
+		"""
+		Enable or disable text entries for colorbar setup.
+		"""
+		chk_box = event.GetEventObject()
+		val = chk_box.GetValue()
+		self.options[self.var_ids[chk_box.GetId()]] = val
+		self.te_midpoint.Enable(val)
+		self.te_min.Enable(val)
+		self.te_max.Enable(val)
 		event.Skip()
 
 	def init_options(self):
@@ -269,35 +486,74 @@ class OptionPanel(wx.Panel):
 		"""
 		self.options = {
 			"variable": nc_tools.get_variables(self.dataset)[0],
-			"time_index": 0,
-			"pl_index": 0,
+			"time_index": None,
+			"pl_index": None,
 			"lon_offset": 0,
 			"coef": 1,
 			"offset": 0,
 			"lon_0": 0,
 			"lat_0": 0,
-			"llcrnrlat": None,
-			"llcrnrlon": None,
-			"urcrnrlat": None,
-			"urcrnrlon": None,
-			"resolution": None,
-			"projection": "merc",
+			"boundaries": False,
+			"llcrnrlat": -90,
+			"llcrnrlon": -180,
+			"urcrnrlat": 90,
+			"urcrnrlon": 180,
+			"resolution": 'i',
+			"projection": "moll",
 			"countries": False,
 			"rivers": False,
 			"cmap": "seismic",
 			"colorbar": False,
+			"norm": False,
 			"c_min": 0,
 			"c_max": 50,
 			"midpoint": 25,
 			"plot_type": "mesh"
 		}
 
+	def update_option(self, var_name : str, val):
+		"""
+		Update the options: assign value :val: to the option associated with element with respect to the associated variable.
+		"""
+		try:
+			self.options[var_name] = val
+		except Exception as e:
+			raise e
+
+	def bind_draw_button(self, handler):
+		"""
+		Bind the draw button with an external handler.
+		"""
+		self.button.Bind(wx.EVT_BUTTON , handler=handler)
 
 class PlotPanel(wx.Panel):
 	"""
+	A panel on which is drawn the map with wanted data.
 	"""
-	def __init__(self, parent, size : tuple):
+	def __init__(self, parent, size : tuple, dataset : nc.Dataset, map_options : dict):
 		super(PlotPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
+		self.parent = parent
+		self.dataset = dataset
+		self.map_options = map_options
+
+		self.figure = Fig()
+		self.axes = self.figure.add_subplot(111)
+		self.canvas = FigureCanvas(self, -1, self.figure)
+
+		self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+		self.main_sizer.Add(self.canvas, 0, wx.EXPAND | wx.ALL, 20)
+		self.SetSizer(self.main_sizer)
+
+	def draw(self):
+		"""
+		Draw the data and the map.
+		"""
+		# Create figure		
+		fig = Figure(ax=self.axes, dataset=self.dataset, map_options=self.map_options)
+
+		fig.plot_data()
+
+		self.figure.canvas.draw()
 
 ###############
 ## Functions ##
