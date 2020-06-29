@@ -72,6 +72,11 @@ class DisplayFrame(wx.Frame):
 		self.dataset = None
 		self.metadata = {}
 
+		# Icon
+		icon = wx.Icon(name="ressources\\logo.ico")
+		#icon.CopyFromBitmap(wx.Bitmap("ressources\\logo.ico", wx.BITMAP_TYPE_ANY))
+		self.SetIcon(icon)
+
 		# Panels to be used inside the frame
 		self.default_panel = None
 		self.overview_panel = None

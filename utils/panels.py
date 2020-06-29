@@ -5,6 +5,7 @@
 #############
 
 # Paths fixing
+import os
 import sys
 if __name__ == '__main__':
 	sys.path.append("features")
@@ -17,10 +18,12 @@ from wx.lib.masked.numctrl import NumCtrl
 
 # matplotlib import
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.figure import Figure as Fig
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+from matplotlib.figure import Figure as MplFig
 
 # Other imports
 import netCDF4 as nc # Not used for its functions, only for typing
+import json # Used to retrieve map presets
 
 # Custom imports
 from features import subpanels
@@ -31,6 +34,8 @@ import nc_tools
 ###############
 ## Constants ##
 ###############
+
+MAP_PREVIEW_PATH = "..\\ressources\\images\\maps\\"
 
 #############
 ## Classes ##
@@ -257,7 +262,7 @@ class OptionPanel(wx.Panel):
 		pnl_proj_sizer = wx.GridSizer(cols=2, gap=(5, 5))
 		
 		text_proj = wx.StaticText(parent=pnl_proj, label="Projection : ")
-		proj_list = display_tools.get_list_projections()
+		proj_list = ["moll", "mill", "ortho"]
 		self.c_box_proj = wx.ComboBox(
 									  parent=pnl_proj,
 									  id=wx.ID_ANY,
@@ -530,18 +535,25 @@ class PlotPanel(wx.Panel):
 	"""
 	A panel on which is drawn the map with wanted data.
 	"""
-	def __init__(self, parent, size : tuple, dataset : nc.Dataset, map_options : dict):
+	def __init__(self, parent, size : tuple, dataset : nc.Dataset, map_options : dict, tb_option : bool = True):
 		super(PlotPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
 		self.parent = parent
 		self.dataset = dataset
 		self.map_options = map_options
 
-		self.figure = Fig()
+		self.figure = MplFig()
 		self.axes = self.figure.add_subplot(111)
 		self.canvas = FigureCanvas(self, -1, self.figure)
 
 		self.main_sizer = wx.BoxSizer(wx.VERTICAL)
-		self.main_sizer.Add(self.canvas, 0, wx.EXPAND | wx.ALL, 20)
+		self.main_sizer.Add(self.canvas, 0, wx.EXPAND)
+
+		self.toolbar = None
+		if tb_option:
+			self.add_toolbar()
+			self.main_sizer.Add(self.toolbar, 0, wx.EXPAND | wx.LEFT, 20)
+			self.toolbar.update()
+
 		self.SetSizer(self.main_sizer)
 
 	def draw(self):
@@ -549,11 +561,21 @@ class PlotPanel(wx.Panel):
 		Draw the data and the map.
 		"""
 		# Create figure		
-		fig = Figure(ax=self.axes, dataset=self.dataset, map_options=self.map_options)
-
+		fig = Figure(figure=self.figure, ax=self.axes, dataset=self.dataset, map_options=self.map_options)
 		fig.plot_data()
-
 		self.figure.canvas.draw()
+
+	def add_toolbar(self):
+		"""
+		Add a toolbar to the Canvas.
+		"""
+		self.toolbar = NavigationToolbar2Wx(self.canvas)
+		self.toolbar.Realize()
+
+		tw, th = self.toolbar.GetSize()
+		cw, ch = self.canvas.GetSize()
+
+		self.toolbar.SetSize(wx.Size(cw, ch))
 
 ###############
 ## Functions ##

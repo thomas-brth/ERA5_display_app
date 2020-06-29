@@ -1,0 +1,30 @@
+/*
+This file gathers customs map presets to plot data. 
+
+To be loaded in Python as follow:
+
+import json
+
+with open(file) as foo:
+	d = json.load(foo)
+	foo.close()
+
+*/
+
+{
+	"default": {
+		"description": "Default map setting. Mollweide projection centered on Greenwich meridian.",
+		"args" : {
+			"projection": "moll",
+			"lon_0": 0
+		},
+		"filename" : "default.png"
+	},
+	"cyl_world": {
+		"description": "Cylindrical equidistant world map, centered on Greenwich meridian.",
+		"args": {
+			"projection": "cyl"
+		},
+		"filename": "cyl_world.png"
+	}
+}
