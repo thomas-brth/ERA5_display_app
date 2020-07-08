@@ -29,9 +29,10 @@ class Figure():
 	Figure is an object containing data to plot and map options.
 	It enables to easily draw a map with data on it.
 	"""
-	def __init__(self, figure : plt.Figure, ax : plt.Axes, dataset : nc.Dataset, map_options : dict):
+	def __init__(self, figure : plt.Figure, ax : plt.Axes, dataset : nc.Dataset, map_options : dict, presets : dict):
 		self.figure = figure
 		self.ax = ax
+		self.presets = presets
 		self.map_options = map_options
 		self.map_settings = self._get_map_settings()
 		
@@ -59,13 +60,8 @@ class Figure():
 		"""
 		Return the basemap kwargs from global map options.
 		"""
-		if self.map_options['boundaries']:
-			keywords = ['projection', 'resolution', 'lon_0', 'lat_0', 'llcrnrlon', 'llcrnrlat', 'urcrnrlon', 'urcrnrlat']
-		else:
-			keywords = ['projection', 'resolution', 'lon_0', 'lat_0']
-		settings = self.map_options.fromkeys(keywords)
-		for key in settings.keys():
-			settings[key] = self.map_options[key]
+		settings = self.presets[self.map_options['preset']]['args'].copy()
+		settings['resolution'] = self.map_options['resolution']
 		return settings
 
 	def _retrieve_data_from_dataset(self, dataset : nc.Dataset):
@@ -105,7 +101,7 @@ class Figure():
 		"""
 		lon, lat = self.adapt_coordinates()
 
-		if self.map_options['projection'] == "ortho":
+		if self.map_settings['projection'] == "ortho":
 			self.data[lon>1e20] = np.nan
 			self.data[lat>1e20] = np.nan
 			self.data[lon<-1e20] = np.nan
@@ -124,7 +120,7 @@ class Figure():
 
 		if self.map_options['colorbar']:
 			divider = make_axes_locatable(self.ax)
-			cax = divider.append_axes("right", size='5%', pad=0.1)
+			cax = divider.append_axes("right", size='3%', pad=0.1)
 			plt.colorbar(mappable=mesh, ax=self.ax, cax=cax, orientation='vertical', extend='both')
 		
 

@@ -29,13 +29,14 @@ import json # Used to retrieve map presets
 from features import subpanels
 from figure import display_tools
 from figure import *
-import nc_tools
+import nc_tools, wx_tools
 
 ###############
 ## Constants ##
 ###############
 
-MAP_PREVIEW_PATH = "..\\ressources\\images\\maps\\"
+MAP_PREVIEW_PATH = os.path.join(os.path.dirname(__file__), "..\\ressources\\images\\maps\\")
+MAP_PRESETS_PATH = os.path.join(os.path.dirname(__file__), "figure\\map_presets.json")
 
 #############
 ## Classes ##
@@ -159,6 +160,7 @@ class OptionPanel(wx.Panel):
 		self.metadata = metadata
 		self.options = {} # It will gather all the options set by the user
 		self.init_options() # Initialize the options dictionary
+		
 		self.var_ids = {} # Dictionary with id keys and their corresponing variable
 		self.c_boxes = [] # List of ComboBox used
 		self.text_entries = [] # List of text entries used
@@ -224,107 +226,72 @@ class OptionPanel(wx.Panel):
 		# --------------------------------------- #
 		# Second StaticBox, data corrections
 		stbox_data_corr = wx.StaticBox(parent=self, label="Corrections")
-		stbox_data_corr_sizer = wx.StaticBoxSizer(stbox_data_corr, wx.HORIZONTAL)
+		stbox_data_corr_sizer = wx.StaticBoxSizer(stbox_data_corr, wx.VERTICAL)
+		pnl_data_corr = wx.Panel(parent=stbox_data_corr)
+		pnl_data_corr_sizer = wx.GridSizer(cols=6, gap=(5, 5))
 
 		# Longitude offset
-		text_lon_offset = wx.StaticText(parent=stbox_data_corr, label="Longitude offset : ")
-		self.te_lon_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
+		text_lon_offset = wx.StaticText(parent=pnl_data_corr, label="Longitude offset : ")
+		self.te_lon_offset = NumCtrl(parent=pnl_data_corr, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
 		self.var_ids[self.te_lon_offset.GetId()] = "lon_offset"
 		self.text_entries.append(self.te_lon_offset)
 
 		# Data multiplicator
-		text_coef = wx.StaticText(parent=stbox_data_corr, label="Apply coefficient : ")
-		self.te_coef = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=1, integerWidth=3, fractionWidth=2)
+		text_coef = wx.StaticText(parent=pnl_data_corr, label="Apply coefficient : ")
+		self.te_coef = NumCtrl(parent=pnl_data_corr, id=wx.ID_ANY, value=1, integerWidth=3, fractionWidth=2)
 		self.var_ids[self.te_coef.GetId()] = "coef"
 		self.text_entries.append(self.te_coef)
 
 		# Data offset
-		text_data_offset = wx.StaticText(parent=stbox_data_corr, label="Data offset : ")
-		self.te_data_offset = NumCtrl(parent=stbox_data_corr, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
+		text_data_offset = wx.StaticText(parent=pnl_data_corr, label="Data offset : ")
+		self.te_data_offset = NumCtrl(parent=pnl_data_corr, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
 		self.var_ids[self.te_data_offset.GetId()] = "offset"
 		self.text_entries.append(self.te_data_offset)
 
 		# StaticBox sizer setup
-		stbox_data_corr_sizer.Add(text_lon_offset, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
-		stbox_data_corr_sizer.Add(self.te_lon_offset, 0, wx.ALIGN_CENTER | wx.ALL, 20)
-		stbox_data_corr_sizer.Add(text_coef, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
-		stbox_data_corr_sizer.Add(self.te_coef, 0, wx.ALIGN_CENTER | wx.ALL, 20)
-		stbox_data_corr_sizer.Add(text_data_offset, 0, wx.ALIGN_CENTER | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
-		stbox_data_corr_sizer.Add(self.te_data_offset, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+		pnl_data_corr_sizer.Add(text_lon_offset, 0, wx.EXPAND | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		pnl_data_corr_sizer.Add(self.te_lon_offset, 0, wx.EXPAND | wx.ALL, 20)
+		pnl_data_corr_sizer.Add(text_coef, 0, wx.EXPAND | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		pnl_data_corr_sizer.Add(self.te_coef, 0, wx.EXPAND | wx.ALL, 20)
+		pnl_data_corr_sizer.Add(text_data_offset, 0, wx.EXPAND | wx.LEFT | wx.TOP | wx.BOTTOM, 20)
+		pnl_data_corr_sizer.Add(self.te_data_offset, 0, wx.EXPAND | wx.ALL, 20)
+		pnl_data_corr.SetSizer(pnl_data_corr_sizer)
+
+		stbox_data_corr_sizer.Add(pnl_data_corr, 0, wx.EXPAND)
 
 		# --------------------------------------- #
 		# Third StaticBox, projection setup
 		stbox_proj = wx.StaticBox(parent=self, label="Map setup")
-		stbox_proj_sizer = wx.StaticBoxSizer(stbox_proj, wx.HORIZONTAL)
+		stbox_proj_sizer = wx.StaticBoxSizer(stbox_proj, wx.VERTICAL)
+
+		pnl_stbox_proj = wx.Panel(parent=stbox_proj)
+		pnl_stbox_proj_sizer = wx.GridBagSizer(0, 0)
 
 		# Panel projection #
-		pnl_proj = wx.Panel(parent=stbox_proj)
+		pnl_proj = wx.Panel(parent=pnl_stbox_proj)
 		pnl_proj_sizer = wx.GridSizer(cols=2, gap=(5, 5))
 		
-		text_proj = wx.StaticText(parent=pnl_proj, label="Projection : ")
-		proj_list = ["moll", "mill", "ortho"]
-		self.c_box_proj = wx.ComboBox(
+		text_preset = wx.StaticText(parent=pnl_proj, label="Map preset : ")
+		with open(MAP_PRESETS_PATH, 'r') as foo:
+			self.presets = json.load(foo)
+			foo.close()
+		presets_list = list(self.presets.keys())
+		self.c_box_presets = wx.ComboBox(
 									  parent=pnl_proj,
 									  id=wx.ID_ANY,
-									  choices=proj_list,
+									  choices=presets_list,
 									  style=wx.CB_DROPDOWN | wx.CB_READONLY
 									  )
-		self.var_ids[self.c_box_proj.GetId()] = "projection"
-		self.c_boxes.append(self.c_box_proj)
-
-		text_lon_0 = wx.StaticText(parent=pnl_proj, label="lon_0 : ")
-		self.te_lon_0 = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
-		self.var_ids[self.te_lon_0.GetId()] = "lon_0"
-		self.text_entries.append(self.te_lon_0)
-
-		text_lat_0 = wx.StaticText(parent=pnl_proj, label="lat_0 : ")
-		self.te_lat_0 = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=0, integerWidth=3, fractionWidth=2)
-		self.var_ids[self.te_lat_0.GetId()] = "lat_0"
-		self.text_entries.append(self.te_lat_0)
-
-		text_llcrnrlon = wx.StaticText(parent=pnl_proj, label="llcrnrlon : ")
-		self.te_llcrnrlon = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=-180, integerWidth=3, fractionWidth=2)
-		self.var_ids[self.te_llcrnrlon.GetId()] = "llcrnrlon"
-		self.text_entries.append(self.te_llcrnrlon)
-		self.te_llcrnrlon.Enable(False)
-
-		text_llcrnrlat = wx.StaticText(parent=pnl_proj, label="llcrnrlat : ")
-		self.te_llcrnrlat = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=-90, integerWidth=3, fractionWidth=2)
-		self.var_ids[self.te_llcrnrlat.GetId()] = "llcrnrlat"
-		self.text_entries.append(self.te_llcrnrlat)
-		self.te_llcrnrlat.Enable(False)
-
-		text_urcrnrlon = wx.StaticText(parent=pnl_proj, label="urcrnrlon : ")
-		self.te_urcrnrlon = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=180, integerWidth=3, fractionWidth=2)
-		self.var_ids[self.te_urcrnrlon.GetId()] = "urcrnrlon"
-		self.text_entries.append(self.te_urcrnrlon)
-		self.te_urcrnrlon.Enable(False)
-
-		text_urcrnrlat = wx.StaticText(parent=pnl_proj, label="urcrnrlat : ")
-		self.te_urcrnrlat = NumCtrl(parent=pnl_proj, id=wx.ID_ANY, value=90, integerWidth=3, fractionWidth=2)
-		self.var_ids[self.te_urcrnrlat.GetId()] = "urcrnrlat"
-		self.text_entries.append(self.te_urcrnrlat)
-		self.te_urcrnrlat.Enable(False)
+		self.var_ids[self.c_box_presets.GetId()] = "preset"
+		self.c_boxes.append(self.c_box_presets)
 
 		# Sizer setup
-		pnl_proj_sizer.Add(text_proj, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.c_box_proj, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(text_lon_0, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.te_lon_0, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(text_lat_0, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.te_lat_0, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(text_llcrnrlon, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.te_llcrnrlon, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(text_llcrnrlat, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.te_llcrnrlat, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(text_urcrnrlon, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.te_urcrnrlon, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(text_urcrnrlat, 0, wx.ALIGN_CENTER, 20)
-		pnl_proj_sizer.Add(self.te_urcrnrlat, 0, wx.ALIGN_CENTER, 20)
+		pnl_proj_sizer.Add(text_preset, 0, wx.ALIGN_CENTER_HORIZONTAL, 20)
+		pnl_proj_sizer.Add(self.c_box_presets, 0, wx.ALIGN_CENTER_HORIZONTAL, 20)
 		pnl_proj.SetSizer(pnl_proj_sizer)
 
 		# Panel other options #
-		pnl_other = wx.Panel(parent=stbox_proj)
+		pnl_other = wx.Panel(parent=pnl_stbox_proj)
 		pnl_other_sizer = wx.GridSizer(cols=2, gap=(5, 5))
 
 		text_res = wx.StaticText(parent=pnl_other, label="Resolution : ")
@@ -360,7 +327,7 @@ class OptionPanel(wx.Panel):
 		self.c_boxes.append(self.c_box_cmap)
 
 		text_pltype = wx.StaticText(parent=pnl_other, label="Plot type : ")
-		plot_types = ["contour", "countourf", "pcolormesh", "streamplot"]
+		plot_types = ["pcolormesh"]
 		self.c_box_pltype = wx.ComboBox(
 									  parent=pnl_other,
 									  id=wx.ID_ANY,
@@ -416,9 +383,31 @@ class OptionPanel(wx.Panel):
 		pnl_other_sizer.Add(self.te_max, 0)
 		pnl_other.SetSizer(pnl_other_sizer)
 
+		# Map preview panels
+		pnl_map_preview = wx.Panel(parent=pnl_stbox_proj, style=wx.BORDER_THEME)
+		pnl_map_preview.SetBackgroundColour(wx.Colour(255, 255, 255))
+		pnl_map_preview_sizer = wx.BoxSizer(wx.VERTICAL)
+
+		self.map_previews = {}
+		for preset in self.presets.keys():
+			filename = os.path.join(MAP_PREVIEW_PATH, self.presets[preset]['filename'])
+			image = wx.Image(filename, wx.BITMAP_TYPE_ANY)
+			bitmap = wx_tools.rescale_image(image, 400, 300)
+			self.map_previews[preset] = wx.StaticBitmap(pnl_map_preview, wx.ID_ANY, bitmap, size=(400,300))
+			pnl_map_preview_sizer.Add(self.map_previews[preset], 0, wx.EXPAND)
+			self.map_previews[preset].Hide()
+
+		self.map_previews[self.options['preset']].Show()
+
+		pnl_map_preview.SetSizer(pnl_map_preview_sizer)
+
 		# StaticBox Sizer setup
-		stbox_proj_sizer.Add(pnl_proj, 0, wx.ALL, 20)
-		stbox_proj_sizer.Add(pnl_other, 0, wx.ALL, 20)
+		pnl_stbox_proj_sizer.Add(pnl_proj, pos=(0, 0), span=(1, 1), flag=wx.EXPAND | wx.ALL, border=20)
+		pnl_stbox_proj_sizer.Add(pnl_other, pos=(0, 1), span=(1, 1), flag=wx.EXPAND | wx.ALL, border=20)
+		pnl_stbox_proj_sizer.Add(pnl_map_preview, pos=(0, 2), span=(1, 2), flag=wx.EXPAND | wx.ALL, border=20)
+		pnl_stbox_proj.SetSizer(pnl_stbox_proj_sizer)
+
+		stbox_proj_sizer.Add(pnl_stbox_proj, 0, wx.ALIGN_CENTER)
 
 		# --------------------------------------- #
 		# PLot Button
@@ -452,25 +441,12 @@ class OptionPanel(wx.Panel):
 		var_name = self.var_ids[_id]
 		if var_name == 'time_index' or var_name == 'pl_index':
 			val = int(element.GetValue().split(" ")[0])
-		elif var_name == 'projection':
-			val = element.GetValue().split(" ")[0]
-			proj_without_boundaries = ['sinu', 'moll', 'hammer', 'npstere', 'spstere', 'nplaea', 'splaea', 'npaeqd', 'spaeqd', 'robin', 'eck4', 'kav7', 'mbtfpq']
-			if val in proj_without_boundaries:
-				self.te_llcrnrlon.Enable(False)
-				self.te_llcrnrlat.Enable(False)
-				self.te_urcrnrlon.Enable(False)
-				self.te_urcrnrlat.Enable(False)
-				self.options['boundaries'] = False
-			else:
-				self.te_llcrnrlon.Enable(True)
-				self.te_llcrnrlat.Enable(True)
-				self.te_urcrnrlon.Enable(True)
-				self.te_urcrnrlat.Enable(True)
-				self.options['boundaries'] = True
+		elif var_name == 'preset':
+			val = element.GetValue()
+			self.display_map_preview(val)
 		else:
 			val = element.GetValue()
 		self.update_option(var_name, val)
-		print(self.options, flush=True)
 		event.Skip()
 
 	def on_norm_change(self, event):
@@ -496,15 +472,8 @@ class OptionPanel(wx.Panel):
 			"lon_offset": 0,
 			"coef": 1,
 			"offset": 0,
-			"lon_0": 0,
-			"lat_0": 0,
-			"boundaries": False,
-			"llcrnrlat": -90,
-			"llcrnrlon": -180,
-			"urcrnrlat": 90,
-			"urcrnrlon": 180,
+			"preset": "default",
 			"resolution": 'i',
-			"projection": "moll",
 			"countries": False,
 			"rivers": False,
 			"cmap": "seismic",
@@ -513,7 +482,7 @@ class OptionPanel(wx.Panel):
 			"c_min": 0,
 			"c_max": 50,
 			"midpoint": 25,
-			"plot_type": "mesh"
+			"plot_type": "pcolormesh"
 		}
 
 	def update_option(self, var_name : str, val):
@@ -531,17 +500,26 @@ class OptionPanel(wx.Panel):
 		"""
 		self.button.Bind(wx.EVT_BUTTON , handler=handler)
 
+	def display_map_preview(self, preset):
+		"""
+		Display the map preview associated with the chosen preset.
+		"""
+		self.map_previews[self.options['preset']].Hide()
+		self.map_previews[preset].Show()
+
 class PlotPanel(wx.Panel):
 	"""
 	A panel on which is drawn the map with wanted data.
 	"""
-	def __init__(self, parent, size : tuple, dataset : nc.Dataset, map_options : dict, tb_option : bool = True):
+	def __init__(self, parent, size : tuple, dataset : nc.Dataset, map_options : dict, presets : dict, tb_option : bool = True):
 		super(PlotPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
 		self.parent = parent
 		self.dataset = dataset
 		self.map_options = map_options
+		self.presets = presets
 
-		self.figure = MplFig()
+		self.figure = MplFig(figsize=(10.8, 6))
+		self.figure.set_facecolor('xkcd:grey')
 		self.axes = self.figure.add_subplot(111)
 		self.canvas = FigureCanvas(self, -1, self.figure)
 
@@ -561,8 +539,9 @@ class PlotPanel(wx.Panel):
 		Draw the data and the map.
 		"""
 		# Create figure		
-		fig = Figure(figure=self.figure, ax=self.axes, dataset=self.dataset, map_options=self.map_options)
+		fig = Figure(figure=self.figure, ax=self.axes, dataset=self.dataset, map_options=self.map_options, presets=self.presets)
 		fig.plot_data()
+		self.figure.tight_layout()
 		self.figure.canvas.draw()
 
 	def add_toolbar(self):

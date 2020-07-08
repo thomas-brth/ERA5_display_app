@@ -73,8 +73,8 @@ class DisplayFrame(wx.Frame):
 		self.metadata = {}
 
 		# Icon
-		icon = wx.Icon(name="ressources\\logo.ico")
-		#icon.CopyFromBitmap(wx.Bitmap("ressources\\logo.ico", wx.BITMAP_TYPE_ANY))
+		icon = wx.Icon(name="ressources\\logo.ico", type=wx.BITMAP_TYPE_ANY)
+		#icon.CopyFromBitmap(wx.Bitmap("ressources\\logo.ico", )
 		self.SetIcon(icon)
 
 		# Panels to be used inside the frame
@@ -175,7 +175,8 @@ class DisplayFrame(wx.Frame):
 									parent=self.notebook,
 									size=PANEL_SIZE,
 									dataset=self.dataset,
-									map_options=self.option_panel.options
+									map_options=self.option_panel.options,
+									presets=self.option_panel.presets
 									)
 		self.plot_panel.draw()
 		self.notebook.AddPage(self.plot_panel, "Plot")

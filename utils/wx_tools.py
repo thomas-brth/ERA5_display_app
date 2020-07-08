@@ -44,6 +44,21 @@ def delete_all_excluding(notebook : wx.Notebook, exclusion_list : list):
 	else:
 		notebook.DeleteAllPages()
 
+## Bitmaps and Images tools ##
+def rescale_image(image : wx.Image, max_width : int, max_height : int):
+	"""
+	Rescale a wx.Image and return a wx.Bitmap.
+	"""
+	width, height = image.GetSize()
+	ratio = width/height
+	new_width = int(ratio*max_height)
+	new_height = int(max_width/ratio)
+	if new_width <= max_width:
+		image.Rescale(new_width, max_height, wx.IMAGE_QUALITY_HIGH)
+	else:
+		image.Rescale(max_width, new_height, wx.IMAGE_QUALITY_HIGH)
+	return wx.Bitmap(image)
+
 def main():
 	pass
 
