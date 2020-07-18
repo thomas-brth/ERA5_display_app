@@ -1,24 +1,66 @@
 {
-	"default": {
-		"description": "Default map setting. Mollweide projection centered on Greenwich meridian.",
-		"args" : {
-			"projection": "moll",
-			"lon_0": 0
-		},
-		"filename" : "default.png"
-	},
-	"cyl_world": {
-		"description": "Cylindrical equidistant world map projection, centered on Greenwich meridian.",
-		"args": {
-			"projection": "cyl"
-		},
-		"filename": "cyl_world.png"
-	},
-	"mill_world": {
-		"description": "Miller cylindrical world map projection, centered on Greenwich meridian.",
-		"args": {
-			"projection": "mill"
-		},
-		"filename": "mill_world.png"
-	}
+    "default": {
+        "description": "Default map setting. Mollweide projection centered on Greenwich meridian.",
+        "args": {
+            "projection": "moll",
+            "lon_0": 0
+        },
+        "filename": "default.png"
+    },
+    "cyl_world": {
+        "description": "Cylindrical equidistant world map projection, centered on Greenwich meridian.",
+        "args": {
+            "projection": "cyl"
+        },
+        "filename": "cyl_world.png"
+    },
+    "mill_world": {
+        "description": "Miller cylindrical world map projection, centered on Greenwich meridian.",
+        "args": {
+            "projection": "mill"
+        },
+        "filename": "mill_world.png"
+    },
+    "mill_cyl_eu": {
+        "description": "Miller cylindrical world map projection, with a bounding box centered on Europe.",
+        "args": {
+            "projection": "mill",
+            "llcrnrlat": 35,
+            "llcrnrlon": -12,
+            "urcrnrlat": 70,
+            "urcrnrlon": 38
+        },
+        "filename": "mill_cyl_eu.png"
+    },
+    "cyl_eu": {
+        "description": "Cylindrical equidistant world map projection, with a bounding box centered on Europe.",
+        "args": {
+            "projection": "cyl",
+            "llcrnrlat": 35,
+            "llcrnrlon": -12,
+            "urcrnrlat": 70,
+            "urcrnrlon": 38
+        },
+        "filename": "cyl_eu.png"
+    },
+    "nps": {
+        "description": "North Polar stereographic projection.",
+        "args": {
+            "projection": "stere",
+            "width": 12000000,
+            "height": 12000000,
+            "lon_0": 0,
+            "lat_0": 90
+        },
+        "filename": "nps.png"
+    },
+    "sps": {
+        "description": "South Polar stereographic projection.",
+        "args": {
+            "projection": "spstere",
+            "boundinglat": -15,
+            "lon_0": 0
+        },
+        "filename": "sps.png"
+    }
 }

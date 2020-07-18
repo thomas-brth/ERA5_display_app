@@ -80,7 +80,7 @@ class Figure():
 		Transform the data.
 		"""
 		lon_offset = self.map_options['lon_offset']
-		self.lons = self.lons-lon_offset
+		self.lons = self.lons+lon_offset
 		temp = self.data[:, 0:720].copy()
 		self.data[:, 0:720] = self.data[:, 720:1440].copy()
 		self.data[:, 720:1440] = temp

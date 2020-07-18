@@ -15,6 +15,7 @@ With this GUI, the user just have to download data from the ***[Copernicus Clima
 
 ## Requirements
 
+***Python modules required:***
 *To do*
 
 ### Basemap
