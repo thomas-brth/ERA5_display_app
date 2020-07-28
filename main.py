@@ -29,6 +29,7 @@ import wx
 # Custom imports
 from utils import nc_tools, wx_tools
 from utils.panels import DefaultPanel, OverviewPanel, OptionPanel, PlotPanel
+from utils.dialogs import PresetDialog
 
 ###############
 ## Constants ##
@@ -92,7 +93,8 @@ class DisplayFrame(wx.Frame):
 										  parent=self.notebook,
 										  size=PANEL_SIZE
 										  )
-		self.default_panel.bind_button(event=wx.EVT_BUTTON, handler=self.open_file_browser)
+		self.default_panel.button_load.Bind(event=wx.EVT_BUTTON, handler=self.open_file_browser)
+		self.default_panel.button_pres.Bind(event=wx.EVT_BUTTON, handler=self.show_pres_gen)
 		
 		# Add panels to each tab
 		self.notebook.AddPage(self.default_panel, "Menu")
@@ -116,6 +118,7 @@ class DisplayFrame(wx.Frame):
 							style=flags
 							)
 		if dlg.ShowModal() == wx.ID_OK:
+			# Retrieve path from FileDialog window and load the associated dataset
 			paths = dlg.GetPaths()
 			self.data_path = paths[0]
 			self.load_data()
@@ -126,19 +129,41 @@ class DisplayFrame(wx.Frame):
 		"""
 		if self.dataset:
 			# If a dataset has already been loaded, delete pages associated with this dataset.
-			# TO ADD: Open a dialog window to make sure it's not a mistake
-			# Something like: "Do you want to continue? Map options and plot will be reset."
-			wx_tools.delete_all_excluding(notebook=self.notebook, exclusion_list=["Menu"])
-		try:
-			self.dataset = nc_tools.open_dataset(self.data_path)
-			self.metadata = nc_tools.get_meta(self.dataset)
-			self.show_overview()
-			self.show_options()
-		except Exception as e:
-			# Catch error and display an error message
-			# TO BE IMPLEMENTED #
-			wx.MessageBox(f"Error! Data could not be loaded.\n{e}", "Error", wx.OK | wx.ICON_ERROR)
-			raise e
+			answer = wx.MessageBox(
+								   message="Do you want to continue?\n\
+								   All tabs will be reset: your selected options, as well as your plot, will be deleted.",
+								   caption="Warning",
+								   style= wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION
+								   )
+			if answer == wx.OK:
+				# Continue process and try loading data
+				wx_tools.delete_all_excluding(notebook=self.notebook, exclusion_list=["Menu"])
+				loading = True
+			else:
+				wx.MessageBox(message="Data loading process aborted.", caption="Information", style= wx.OK | wx.ICON_INFORMATION)
+				loading = False
+		else:
+			loading = True
+		if loading:
+			try:
+				self.dataset = nc_tools.open_dataset(self.data_path)
+				self.metadata = nc_tools.get_meta(self.dataset)
+				self.show_overview()
+				self.show_options()
+			except Exception as e:
+				# Catch error and display an error message
+				## ADD AN EXECPTION LOG FILE ##
+				wx.MessageBox(
+							  message=f"Error! Data could not be loaded.\n{e}",
+							  caption="Error",
+							  style=wx.OK | wx.ICON_ERROR
+							  )
+
+	def show_pres_gen(self, event):
+		"""
+		Show the preset generator dialog.
+		"""
+		PresetDialog(self, "Preset Generator")
 
 	def show_overview(self):
 		"""
@@ -164,7 +189,7 @@ class DisplayFrame(wx.Frame):
 										metadata=self.metadata
 										)
 		self.notebook.AddPage(self.option_panel, "Map Options")
-		self.option_panel.bind_draw_button(handler=self.show_plot)
+		self.option_panel.button.Bind(wx.EVT_BUTTON , handler=self.show_plot)
 
 	def show_plot(self, event):
 		"""

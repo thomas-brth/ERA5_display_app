@@ -4,7 +4,16 @@
 ## Imports ##
 #############
 
+# wxPython import
 import wx
+
+# matplotlib import
+from matplotlib import pyplot as plt
+from mpl_toolkits.basemap import Basemap
+
+# Other imports
+import os
+import json
 
 ###############
 ## Constants ##
@@ -66,6 +75,102 @@ class VariablePanel(wx.Panel):
 		self.main_sizer.Add(stbox_attr_sizer, 0, wx.LEFT, 20)
 
 		self.SetSizer(self.main_sizer)
+
+class PresetPanel(wx.Panel):
+	"""
+	A panel for preset generator dialog.
+	"""
+	def __init__(self, parent, size : tuple):
+		super(PresetPanel, self).__init__(parent=parent, id=wx.ID_ANY, size=size)
+		self.parent = parent
+		self.current_args = {}
+
+		self.sizer = wx.BoxSizer(wx.VERTICAL)
+		
+		# Description
+		self.te_desc = wx.TextCtrl(parent=self, id=wx.ID_ANY, value="Enter a description")
+		
+		# Filename
+		self.te_filename = wx.TextCtrl(parent=self, id=wx.ID_ANY, value="Enter a filename (without extension)")
+
+		# Sub panel
+		sub_panel = wx.Panel(parent=self, id=wx.ID_ANY)
+		sub_sizer = wx.GridSizer(cols=2, gap=(5, 5))
+		text_name = wx.StaticText(parent=sub_panel, label="Argument name")
+		text_val = wx.StaticText(parent=sub_panel, label="Argument value")
+		self.te_name = wx.TextCtrl(parent=sub_panel, id=wx.ID_ANY, value="", style=wx.TE_CENTRE)
+		self.te_val = wx.TextCtrl(parent=sub_panel, id=wx.ID_ANY, value="", style=wx.TE_CENTRE)
+		self.button_add = wx.Button(parent=sub_panel, label="Add")
+		self.button_reset = wx.Button(parent=sub_panel, label="Reset")
+
+		sub_sizer.Add(text_name, 0, wx.ALIGN_CENTER, 0)
+		sub_sizer.Add(text_val, 0, wx.ALIGN_CENTER, 0)
+		sub_sizer.Add(self.te_name, 0, wx.ALIGN_CENTER, 0)
+		sub_sizer.Add(self.te_val, 0, wx.ALIGN_CENTER, 0)
+		sub_sizer.Add(self.button_add, 0, wx.ALIGN_CENTER, 0)
+		sub_sizer.Add(self.button_reset, 0, wx.ALIGN_CENTER, 0)
+		sub_panel.SetSizer(sub_sizer)
+
+		# Entered arguments
+		self.te_arguments = wx.TextCtrl(parent=self, id=wx.ID_ANY, style=wx.TE_MULTILINE | wx.VSCROLL | wx.TE_READONLY)
+
+		# Process button
+		self.button_process = wx.Button(parent=self, label="Process", size=(200, 50))
+
+		# Buttons binding
+		self.button_add.Bind(event=wx.EVT_BUTTON, handler=self.on_add)
+		self.button_reset.Bind(event=wx.EVT_BUTTON, handler=self.on_reset)
+
+		# Main sizer setup
+		self.sizer.Add(self.te_desc, 0, wx.EXPAND | wx.ALL, 10)
+		self.sizer.Add(self.te_filename, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+		self.sizer.Add(sub_panel, 0, wx.CENTER | wx.ALL, 10)
+		self.sizer.Add(self.te_arguments, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+		self.sizer.Add(self.button_process, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+		self.SetSizer(self.sizer)
+
+	def on_add(self, event):
+		"""
+		Called when the add button is pressed.
+		"""
+		arg_name = self.te_name.GetValue()
+		arg_value = self.te_val.GetValue()
+		self.current_args[arg_name] = arg_value
+		print(f"{arg_name} : {arg_value}", flush=True)
+		self.update_arguments(arg_name, arg_value)
+
+	def on_reset(self, event):
+		"""
+		Called when the reset button is pressed.
+		"""
+		self.te_arguments.ChangeValue("")
+
+	def update_arguments(self, arg_name : str, arg_value : str):
+		"""
+		Update TextCtrl displaying entered arguments.
+		"""
+		current_display = self.te_arguments.GetValue()
+		self.te_arguments.ChangeValue(current_display+f"{arg_name} : {arg_value}\n")
+	
+	@staticmethod
+	def preset_formatter(preset_file : str, filename : str, description : str, args : dict):
+		"""
+		Format information, load the presets file and add them.
+		"""
+		with open(preset_file, 'r') as foo:
+			map_presets = json.load(foo)
+			foo.close()
+	
+		preset_name = filename.split(".")[0]
+		temp_dict = {}
+		temp_dict["description"] = description
+		temp_dict["args"] = args
+		temp_dict["filename"] = filename
+		map_presets[preset_name] = temp_dict
+		
+		with open(preset_file, 'w') as foo:
+			json.dump(map_presets, foo, indent=4)
+			foo.close()
 
 ###############
 ## Functions ##

@@ -52,26 +52,18 @@ class DefaultPanel(wx.Panel):
 		
 		# Create features
 		self.sizer = wx.BoxSizer(wx.VERTICAL)
-		self.text = wx.StaticText(self,
-								  label="Choose the data file you want to load.\nOnly .nc files are allowed",
-								  size=(200, 200),
-								  style=wx.ALIGN_CENTER
-								  )
-		font = self.text.GetFont()
-		font.PointSize += 5
-		font = font.Bold()
-		self.text.SetFont(font)
-		self.button = wx.Button(self, label="Load data", size=(300, 50))
-		# Add features to the panel sizer
-		self.sizer.Add(self.text, 0, wx.EXPAND|wx.CENTER, 0)
-		self.sizer.Add(self.button, 0, wx.ALL|wx.CENTER, 0)
-		self.SetSizer(self.sizer)
+		self.button_load = wx.Button(self, label="Load data", size=(300, 50))
+		tooltip_load = wx.ToolTip("Choose the data file you want to load.\nOnly .nc files are allowed.")
+		self.button_load.SetToolTip(tooltip_load)
 
-	def bind_button(self, event, handler):
-		"""
-		Assign an event handler to the button.
-		"""
-		self.button.Bind(event, handler=handler)
+		self.button_pres = wx.Button(self, label="Preset generator", size=(300, 50))
+		tooltip_pres = wx.ToolTip("Genereate a new map preset.\nArguments have to be entered one by one.")
+		self.button_pres.SetToolTip(tooltip_pres)
+
+		# Add features to the panel sizer
+		self.sizer.Add(self.button_load, 0, wx.ALL|wx.CENTER, 20)
+		self.sizer.Add(self.button_pres, 0, wx.ALL|wx.CENTER, 20)
+		self.SetSizer(self.sizer)
 
 class OverviewPanel(wx.Panel):
 	"""
@@ -493,12 +485,6 @@ class OptionPanel(wx.Panel):
 			self.options[var_name] = val
 		except Exception as e:
 			raise e
-
-	def bind_draw_button(self, handler):
-		"""
-		Bind the draw button with an external handler.
-		"""
-		self.button.Bind(wx.EVT_BUTTON , handler=handler)
 
 	def display_map_preview(self, preset):
 		"""

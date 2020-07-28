@@ -21,7 +21,7 @@
         },
         "filename": "mill_world.png"
     },
-    "mill_cyl_eu": {
+    "mill_eu": {
         "description": "Miller cylindrical world map projection, with a bounding box centered on Europe.",
         "args": {
             "projection": "mill",
@@ -30,7 +30,7 @@
             "urcrnrlat": 70,
             "urcrnrlon": 38
         },
-        "filename": "mill_cyl_eu.png"
+        "filename": "mill_eu.png"
     },
     "cyl_eu": {
         "description": "Cylindrical equidistant world map projection, with a bounding box centered on Europe.",
@@ -42,17 +42,6 @@
             "urcrnrlon": 38
         },
         "filename": "cyl_eu.png"
-    },
-    "nps": {
-        "description": "North Polar stereographic projection.",
-        "args": {
-            "projection": "stere",
-            "width": 12000000,
-            "height": 12000000,
-            "lon_0": 0,
-            "lat_0": 90
-        },
-        "filename": "nps.png"
     },
     "sps": {
         "description": "South Polar stereographic projection.",
